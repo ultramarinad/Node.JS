@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Socket</title>
+    <script src="https://cdn.socket.io/4.2.0/socket.io.min.js" integrity="sha384-PiBR5S00EtOj2Lto9Uu81cmoyZqR57XcOna1oAuVuIEjzj0wpqDVfD0JA9eXlRsj" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div style="display: flex;">
+        <div style="padding: 30px;">
+            <input id="input" type="text" autofocus>
+            <button id="button">Send</button>
+        </div>
+        <div class="user-space">
+        </div>
+    </div>
+    <div id="messages"></div>
+    <script>
+        const socket = io('localhost:8080');
+        const messageBlock = document.querySelector('#messages');
+        const input = document.querySelector('#input');
+        const button = document.querySelector('#button');
+        const userSpace = document.querySelector('.user-space')
+        const userName = prompt('Введите имя пользователя.');
+
+        button.addEventListener('click', () => {
+            const data = {
+                message: input.value,
+                user: userName,
+            };
+
+            socket.emit('client-msg', data);
+            input.value = '';
+        });
+        socket.on('connect', () => {
+            socket.emit('userNameConnect', userName);
+        });
+
+        socket.on('reconnect', () => {
+            const data = {
+                message: `User ${userName} has reconnected`
+            }
+
+            socket.emit('reconnect', data);
+        });
+
+        socket.on('server-msg', (data) => {
+            messageBlock.insertAdjacentHTML('afterbegin', `<div>${ data.message }</div>`);
+        });
+
+        socket.on('user-msg', (data) => {
+            messageBlock.insertAdjacentHTML('afterbegin', `<div><span style="font-weight: bold">${data.user}</span>: ${ data.message }</div>`);
+        });
+
+        socket.on('user-check', (data) => {
+            userSpace.innerHTML = '<h4>Пользователи:</h4>';
+            data.forEach(el => {
+                userSpace.insertAdjacentHTML('beforeend', `<div>${el}</div>`)
+            });
+            userSpace.insertAdjacentHTML('beforeend', `<div>В чате ${data.length} пользователей</div>`)
+        });
+    </script>
+</body>
+
+</html>
